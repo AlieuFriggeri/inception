@@ -1,40 +1,40 @@
 FROM debian:bullseye
+RUN apt-get update && apt-get -y install \
+	wget \
+	curl \
+	bash \
+	php \
+	php-cgi \
+	php-mysql \
+	php-fpm \
+	php-pdo \
+	php-gd php-cli \
+	php-mbstring \
+	redis \
+	php-redis \
+	&& rm -rf /var/lib/apt/lists/*
 
-RUN apt-get update -y
+# I need to install wp_cli command and put it in the right directory /usr/local/bin
+RUN curl -O https://raw.githubusercontent.com/wp-cli/builds/gh-pages/phar/wp-cli.phar \
+  && chmod +x wp-cli.phar \
+  && mv wp-cli.phar /usr/local/bin/wp
 
-RUN apt-get upgrade -y
+# Copy the .conf in the html directory
+COPY ./conf/www.conf /etc/php/7.3/fpm/pool.d/
 
-RUN apt-get install wget -y
+#Create the folder to enable php start
+RUN mkdir /run/php
 
-RUN apt-get install -y php7.3\
- php-fpm\
- php-mysql\
- mariadb-client
+#we copy the script, give the right to launch it in local on our computer
+COPY ./tools/create_wordpress.sh /usr/local/bin/
+RUN chmod +x /usr/local/bin/create_wordpress.sh
+ENTRYPOINT ["/usr/local/bin/create_wordpress.sh"]
 
-RUN wget https://fr.wordpress.org/wordpress-6.0-fr_FR.tar.gz -P /var/www
+#We go the html directory
+WORKDIR /var/www/html/
 
-RUN cd /var/www && tar -xzf wordpress-6.0-fr_FR.tar.gz && rm wordpress-6.0-fr_FR.tar.gz
-
-RUN chmod 755 /var/www/wordpress
-
-COPY ./conf/php.conf /etc/php/7.3/fpm/pool.d/www.conf
-
-RUN mkdir -p /run/php
-
-RUN chmod 755 /run/php
-
-RUN wget https://raw.githubusercontent.com/wp-cli/builds/gh-pages/phar/wp-cli.phar
-
-RUN chmod +x wp-cli.phar
-
-RUN mv wp-cli.phar /usr/local/bin/wp
-
-COPY ./script/script.sh /etc/script.sh
-
-RUN chmod +x /etc/script.sh
-
+#We expose the 9000 port
 EXPOSE 9000
 
-WORKDIR /var/www/wordpress
-
-ENTRYPOINT ["sh", "/etc/script.sh"]
+#Launch PHP FPM in foreground and ignore deamonize from conf file (-F)
+CMD ["/usr/sbin/php-fpm7.3", "-F"]

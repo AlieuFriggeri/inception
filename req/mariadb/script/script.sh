@@ -1,22 +1,44 @@
-#!/bin/bash
+#!/bin/sh
 
-# print command
-set -x
+mysql_install_db
 
-touch file
-chmod 777 file
+/etc/init.d/mysql start
 
-echo "CREATE DATABASE IF NOT EXISTS wordpress;" >> file
-echo "FLUSH PRIVILEGES;" >> file
-echo "GRANT ALL ON *.* TO '$SQL_ROOT_USER'@'localhost' IDENTIFIED BY '$SQL_ROOT_PASSWORD' WITH GRANT OPTION;" >> file
-echo "FLUSH PRIVILEGES;" >> file
-echo "CREATE USER IF NOT EXISTS '$SQL_USER'@'%' IDENTIFIED BY '$SQL_PASSWORD';" >> file
-echo "GRANT ALL ON wordpress.* TO '$SQL_USER'@'%' IDENTIFIED BY '$SQL_PASSWORD';"  >> file
-echo "FLUSH PRIVILEGES;" >> file
+#Check if the database exists
 
-cat file
+if [ -d "/var/lib/mysql/$MYSQL_DATABASE" ]
+then 
 
-mysqld --user=mysql --verbose --bootstrap < file
-rm file
+	echo "Database already exists"
+else
 
-exec mysqld
+# Set root option so that connexion without root password is not possible
+
+mysql_secure_installation << _EOF_
+
+Y
+root4life
+root4life
+Y
+n
+Y
+Y
+_EOF_
+
+#Add a root user on 127.0.0.1 to allow remote connexion 
+#Flush privileges allow to your sql tables to be updated automatically when you modify it
+#mysql -uroot launch mysql command line client
+echo "GRANT ALL ON *.* TO 'root'@'%' IDENTIFIED BY '$MYSQL_ROOT_PASSWORD'; FLUSH PRIVILEGES;" | mysql -uroot
+
+#Create database and user in the database for wordpress
+
+echo "CREATE DATABASE IF NOT EXISTS $MYSQL_DATABASE; GRANT ALL ON $MYSQL_DATABASE.* TO '$MYSQL_USER'@'%' IDENTIFIED BY '$MYSQL_PASSWORD'; FLUSH PRIVILEGES;" | mysql -u root
+
+#Import database in the mysql command line
+mysql -uroot -p$MYSQL_ROOT_PASSWORD $MYSQL_DATABASE < /usr/local/bin/wordpress.sql
+
+fi
+
+/etc/init.d/mysql stop
+
+exec "$@"
