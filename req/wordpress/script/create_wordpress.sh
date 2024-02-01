@@ -1,44 +1,36 @@
 #!/bin/sh
+echo "Start BASH SCRIPT" > my_bashLog.txt
+env > /tmp/test
+while ! mariadb -u $MYSQL_USER --password=$MYSQL_PASSWORD -P 3306 $MYSQL_DATABASE ; do
+	sleep 3
+	echo "Error connecting to db" >> my_bashLog.txt
+done
 
-#check if wp-config.php exist
-if [ -f ./wp-config.php ]
+
+echo "Awaken" >> my_bashLog.txt
+
+mkdir -p /run/php/;
+touch /run/php/php-fpm.pid;
+
+if [ -f ./wordpress/wp-config.php ]
 then
-	echo "wordpress already downloaded"
+	echo "wordpress already downloaded" > my_bashLog.txt
 else
-
-####### MANDATORY PART ##########
-
-	#Download wordpress and all config file
-	wget http://wordpress.org/latest.tar.gz
-	tar xfz latest.tar.gz
-	mv wordpress/* .
-	rm -rf latest.tar.gz
-	rm -rf wordpress
-
-	#Inport env variables in the config file
-	sed -i "s/username_here/$MYSQL_USER/g" wp-config-sample.php
-	sed -i "s/password_here/$MYSQL_PASSWORD/g" wp-config-sample.php
-	sed -i "s/localhost/$MYSQL_HOSTNAME/g" wp-config-sample.php
-	sed -i "s/database_name_here/$MYSQL_DATABASE/g" wp-config-sample.php
-	cp wp-config-sample.php wp-config.php
-###################################
-
-####### BONUS PART ################
-
-## redis ##
-
-	wp config set WP_REDIS_HOST redis --allow-root #I put --allowroot because i am on the root user on my VM
-  	wp config set WP_REDIS_PORT 6379 --raw --allow-root
- 	wp config set WP_CACHE_KEY_SALT $DOMAIN_NAME --allow-root
-  	#wp config set WP_REDIS_PASSWORD $REDIS_PASSWORD --allow-root
- 	wp config set WP_REDIS_CLIENT phpredis --allow-root
-	wp plugin install redis-cache --activate --allow-root
-    wp plugin update --all --allow-root
-	wp redis enable --allow-root
-
-###  end of redis part  ###
-
-###################################
+	echo "Trying to DL" >> my_bashLog.txt
+	chown -R www-data:www-data /var/www/*
+	chmod -R 755 /var/www/*
+	mkdir -p /var/www/html
+	wget https://raw.githubusercontent.com/wp-cli/builds/gh-pages/phar/wp-cli.phar
+	chmod +x wp-cli.phar
+	mv wp-cli.phar /usr/local/bin/wp	
+	ls -l /var/www/html >> content.txt
+	cd /var/www/html || exit
+	wp core download --allow-root
+	wp config create --dbname=$MYSQL_DATABASE --dbuser=$MYSQL_USER --dbpass=$MYSQL_PASSWORD --dbhost=$MYSQL_HOST --dbcharset="utf8" --dbcollate="utf8_general_ci" --allow-root
+	wp core install --url=$DOMAIN_NAME --title=inception --admin_user=$MYSQL_ROOT_USER --admin_password=$MYSQL_ROOT_PASSWORD --admin_email=$MYSQL_MAILL --skip-email --allow-root
+	wp user create $MYSQL_USER $MYSQL_MAIL --role=author --user_pass=$MYSQL_PASSWORD --allow-root
+	echo "Done setting up" >> my_bashLog.txt
+	
 fi
 
 exec "$@"

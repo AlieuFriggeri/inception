@@ -62,9 +62,9 @@ volumes:
     driver_opts:
       type: none
       o: bind
-      device: '~/data/wordpress/'
+      device: '/Users/afrigger/data/wordpress/'
   mariadb:
     driver_opts:
       type: none
       o: bind
-      device: '~/data/mariadb/'
+      device: '/Users/afrigger/data/mariadb/'
