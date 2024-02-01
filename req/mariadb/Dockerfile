@@ -10,6 +10,9 @@ RUN mkdir -p /run/mysqld
 
 RUN chown -R mysql:root /run/mysqld
 
+RUN chown -R mysql:mysql /run/mysqld
+RUN chown -R mysql:mysql /var/lib/mysql
+
 COPY ./conf/50-server.cnf /etc/mysql/mariadb.conf.d/50-server.cnf
 
 COPY ./script/script.sh /etc/script.sh

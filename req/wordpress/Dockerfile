@@ -7,12 +7,29 @@ RUN		apt-get -y install wget
 RUN		apt-get install -y php	\
 		php-fpm						\
 		php-mysql					\
-		mariadb-client
+		mariadb-client \
+		mariadb-server
 
-COPY conf/www.conf /etc/php82/php-fpm.d/www.conf
-COPY script/create_wordpress.sh /usr/local/bin/create_wordpress.sh
-RUN chmod +x /usr/local/bin/create_wordpress.sh
-EXPOSE 9000
-ENTRYPOINT ["/usr/local/bin/create_wordpress.sh"]
+RUN		wget https://fr.wordpress.org/wordpress-6.2-fr_FR.tar.gz -P /var/www
+RUN		cd /var/www && tar -xzf wordpress-6.2-fr_FR.tar.gz && rm wordpress-6.2-fr_FR.tar.gz
+RUN		chmod 755 /var/www/wordpress
 
-CMD ["/usr/sbin/php-fpm7.4", "--nodaemonize"]
+COPY	./conf/php.conf /etc/php/7.4/fpm/pool.d/www.conf
+
+RUN     mkdir -p /run/php
+RUN     chmod 755 /run/php
+
+RUN		wget https://raw.githubusercontent.com/wp-cli/builds/gh-pages/phar/wp-cli.phar
+RUN		chmod +x wp-cli.phar
+RUN		mv wp-cli.phar /usr/local/bin/wp
+
+COPY	./script/auto_config.sh /etc/auto_config.sh
+COPY	./script/article.txt /tmp/article.txt
+
+RUN		chmod +x /etc/auto_config.sh
+
+EXPOSE	9000
+
+WORKDIR /var/www/wordpress
+
+ENTRYPOINT		["sh", "/etc/auto_config.sh"]
