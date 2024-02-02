@@ -1,27 +1,22 @@
-FROM	debian:bullseye
+FROM debian:buster
 
-#install all the program
-RUN		apt-get update
-RUN		apt-get upgrade
-RUN		apt-get install -y nginx \
-                openssl
+RUN apt-get update -y
+RUN apt-get upgrade -y
 
-# nginx SSL
-RUN mkdir /etc/nginx/ssl
-RUN openssl req -newkey rsa:4096 -x509 -sha256 -days 365 -nodes \
-       -out /etc/nginx/ssl/inception.crt \
-       -keyout /etc/nginx/ssl/inception.key \
-       -subj "/C=FR/ST=Paris/L=Paris/O=42 School/OU=vbachele/CN=vbachele/"
+RUN apt-get install nginx -y
+
+RUN apt-get install openssl -y
+
+RUN mkdir -p /etc/nginx/ssl
+
+RUN openssl req -x509 -nodes -days 365 -newkey rsa:4096 -keyout /etc/ssl/private/afrigger.key -out /etc/ssl/certs/afrigger.crt -subj "/C=CH/ST=Lausanne/L=Lausanne/O=42 School/OU=afrigger/CN=afrigger/";
 
 RUN chmod 755 /var/www/html
 RUN mkdir -p /var/www/html && chmod 755 /var/www/html
+RUN chown -R www-data:www-data /var/www/html
 
-COPY conf/nginx.conf /etc/nginx/nginx.conf
+COPY ./conf/nginx.conf /etc/nginx/nginx.conf
 
-# nginx config
+EXPOSE 443
 
-#the only port allowed
-EXPOSE	443
-
-# Start nginx
 CMD ["nginx", "-g", "daemon off;"]

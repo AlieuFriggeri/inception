@@ -1,22 +1,16 @@
-FROM debian:bullseye
+FROM debian:buster
 
 RUN apt-get update -y
-
 RUN apt-get upgrade -y
+RUN apt-get install vim -y
+RUN apt-get install mariadb-server -y
 
-RUN apt-get install mariadb-server -y && apt-get install mariadb-client -y
-
-RUN mkdir -p /run/mysqld 
-
+RUN mkdir -p /run/mysqld
 RUN chown -R mysql:root /run/mysqld
-
-RUN chown -R mysql:mysql /run/mysqld
-RUN chown -R mysql:mysql /var/lib/mysql
 
 COPY ./conf/50-server.cnf /etc/mysql/mariadb.conf.d/50-server.cnf
 
 COPY ./script/script.sh /etc/script.sh
-
 RUN chmod +x /etc/script.sh
 
 EXPOSE 3306
