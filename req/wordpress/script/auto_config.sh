@@ -9,8 +9,7 @@ if ! wp core is-installed --allow-root  ; then
     --allow-root --force
     wp core install --url="afrigger.42.fr" --title="Inception" \
     --admin_user=$MYSQL_ROOT_USER --admin_password=$MYSQL_ROOT_PASSWORD \
-    --admin_email=ppotier@42lausanne.ch --allow-root
-	echo "MAIMAMAIMIAL"
+    --admin_email=$MYSQL_MAIL --allow-root
     wp user create $MYSQL_USER --user_pass=$MYSQL_PASSWORD --allow-root
     wp config shuffle-salts --allow-root
 	# wp post create /tmp/article.txt --post_title="Inception" --post-status=publish --post_author="chatgepeto" --allow-root
@@ -20,7 +19,7 @@ fi
 
 if wp core is-installed --allow-root  ; then
     echo "Wordpress is installed and running"
-    php-fpm7.3 -F -R
+    php-fpm7.4 -F -R
 else
     echo "Wordpress's installation failed"
 fi
