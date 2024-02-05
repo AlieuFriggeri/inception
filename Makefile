@@ -3,6 +3,8 @@ DATA_FOLDER = /Users/afrigger/data
 
 all:
 	clear
+	mkdir -p /Users/afrigger/data/mariadb
+	mkdir -p /Users/afrigger/data/wordpress
 	$(DOCKER) up -d --build
 
 clean:
@@ -12,6 +14,8 @@ clean:
 
 fclean: clean
 	docker system prune -a --volumes
+	docker volume rm inception3_mariadb
+	docker volume rm inception3_wordpress
 
 re : fclean all
 
